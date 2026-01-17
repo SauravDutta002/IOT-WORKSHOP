@@ -6,61 +6,82 @@
 #include <BlynkSimpleEsp8266.h>
 
 // WiFi credentials
-char ssid[] = "YOUR_WIFI_NAME";
-char pass[] = "YOUR_WIFI_PASSWORD";
+char ssid[] = "IOT";
+char pass[] = "123456789";
 
-// Ultrasonic sensor pins
-#define TRIG_PIN D5
-#define ECHO_PIN D6
+// Pin definitions
+#define LED_PIN   D1    // GPIO5
+#define TRIG_PIN  D5    // GPIO14
+#define ECHO_PIN  D6    // GPIO12
 
-WidgetLCD lcd(V1);   // LCD widget
+BlynkTimer timer;
 
-long duration;
-float distance;
+// -------- LED Control (V0) --------
+BLYNK_WRITE(V0)
+{
+  int buttonState = param.asInt();
+  digitalWrite(LED_PIN, buttonState ? HIGH : LOW);
+
+  Serial.print("LED State: ");
+  Serial.println(buttonState ? "ON" : "OFF");
+}
+
+// -------- Ultrasonic Sensor Function --------
+void readUltrasonic()
+{
+  long duration;
+  int distance;
+
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  duration = pulseIn(ECHO_PIN, HIGH, 30000); // timeout added
+
+  if (duration == 0)
+  {
+    Serial.println("Ultrasonic: Out of range");
+    distance = 0;
+  }
+  else
+  {
+    distance = duration * 0.034 / 2;
+    Serial.print("Distance: ");
+    Serial.print(distance);
+    Serial.println(" cm");
+  }
+
+  // Send to Blynk Gauge
+  Blynk.virtualWrite(V1, distance);
+}
 
 void setup()
 {
   Serial.begin(9600);
+  Serial.println("\n--- ESP8266 Blynk Ultrasonic System ---");
 
+  pinMode(LED_PIN, OUTPUT);
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
+  digitalWrite(LED_PIN, LOW);
+
+  Serial.print("Connecting to WiFi: ");
+  Serial.println(ssid);
+
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
 
-  lcd.clear();
-  lcd.print(0, 0, "Digital Ruler");
-  lcd.print(0, 1, "Measuring...");
+  Serial.println("Connected to Blynk Cloud ✅");
+
+  // Read ultrasonic every 1 second
+  timer.setInterval(1000L, readUltrasonic);
 }
 
 void loop()
 {
   Blynk.run();
-
-  // Trigger ultrasonic pulse
-  digitalWrite(TRIG_PIN, LOW);
-  delayMicroseconds(2);
-  digitalWrite(TRIG_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
-
-  // Read echo time
-  duration = pulseIn(ECHO_PIN, HIGH);
-
-  // Calculate distance (cm)
-  distance = duration * 0.034 / 2;
-
-  // Display on Serial Monitor
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
-
-  // Display on Blynk LCD
-  lcd.clear();
-  lcd.print(0, 0, "Distance:");
-  lcd.print(0, 1, String(distance) + " cm");
-
-  // Optional Gauge widget
-  Blynk.virtualWrite(V0, distance);
-
-  delay(500);
+  timer.run();
 }
