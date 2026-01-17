@@ -1,0 +1,72 @@
+#define BLYNK_TEMPLATE_ID "TMPL3WIwifVuQ"
+#define BLYNK_TEMPLATE_NAME "saurav dutta"
+#define BLYNK_AUTH_TOKEN "1W58hF0flH8oqVWlfTHwjSPif-mJKOV0"
+
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+
+// WiFi credentials
+char ssid[] = "YOUR_WIFI_NAME";
+char pass[] = "YOUR_WIFI_PASSWORD";
+
+// Ultrasonic sensor pins
+#define TRIG_PIN 5
+#define ECHO_PIN 18
+
+WidgetLCD lcd(V1);   // LCD widget
+
+long duration;
+float distance;
+
+void setup()
+{
+  Serial.begin(115200);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  lcd.clear();
+  lcd.print(0, 0, "Digital Ruler");
+  lcd.print(0, 1, "Measuring...");
+}
+
+void loop()
+{
+  Blynk.run();
+
+  // Send ultrasonic pulse
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  // Read echo time
+  duration = pulseIn(ECHO_PIN, HIGH, 30000); // timeout 30ms
+
+  if (duration == 0)
+  {
+    lcd.clear();
+    lcd.print(0, 0, "Out of Range");
+    return;
+  }
+
+  // Distance calculation (cm)
+  distance = duration * 0.034 / 2;
+
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // Update Blynk LCD
+  lcd.clear();
+  lcd.print(0, 0, "Distance:");
+  lcd.print(0, 1, String(distance) + " cm");
+
+  // Optional gauge
+  Blynk.virtualWrite(V0, distance);
+
+  delay(500);
+}

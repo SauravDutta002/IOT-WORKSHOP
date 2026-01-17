@@ -1,0 +1,59 @@
+#define BLYNK_TEMPLATE_ID "TMPL3WIwifVuQ"
+#define BLYNK_TEMPLATE_NAME "saurav dutta"
+#define BLYNK_AUTH_TOKEN "1W58hF0flH8oqVWlfTHwjSPif-mJKOV0"
+
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+
+// WiFi credentials
+char ssid[] = "YOUR_WIFI_NAME";
+char pass[] = "YOUR_WIFI_PASSWORD";
+
+// Soil moisture pin (ADC)
+#define SOIL_PIN 34
+
+// Threshold value
+int threshold = 2500;
+
+WidgetLCD lcd(V1);   // LCD widget
+
+void setup()
+{
+  Serial.begin(115200);
+
+  pinMode(SOIL_PIN, INPUT);
+
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  lcd.clear();
+  lcd.print(0, 0, "Plant Monitor");
+  lcd.print(0, 1, "System Ready");
+}
+
+void loop()
+{
+  Blynk.run();
+
+  int soilValue = analogRead(SOIL_PIN);
+
+  Serial.print("Soil Moisture: ");
+  Serial.println(soilValue);
+
+  // Optional gauge display
+  Blynk.virtualWrite(V0, soilValue);
+
+  lcd.clear();
+
+  if (soilValue > threshold)
+  {
+    lcd.print(0, 0, "⚠ ALERT");
+    lcd.print(0, 1, "NEED WATER");
+  }
+  else
+  {
+    lcd.print(0, 0, "Soil Status");
+    lcd.print(0, 1, "Moisture OK");
+  }
+
+  delay(1000);
+}

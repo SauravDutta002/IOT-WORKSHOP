@@ -1,0 +1,36 @@
+#define BLYNK_TEMPLATE_ID "TMPL3WIwifVuQ"
+#define BLYNK_TEMPLATE_NAME "saurav dutta"
+#define BLYNK_AUTH_TOKEN "1W58hF0flH8oqVWlfTHwjSPif-mJKOV0"
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+// WiFi credentials
+char ssid[] = "IOT";
+char pass[] = "123456789";
+
+// LED pin (change if needed)
+#define LED_PIN D1   // GPIO5
+
+// Button widget on Virtual Pin V0
+BLYNK_WRITE(V0)
+{
+  int value = param.asInt(); // 1 or 0
+  digitalWrite(LED_PIN, value ? HIGH : LOW);
+}
+
+void setup()
+{
+  Serial.begin(9600);
+
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+
+  // Connect to Blynk Cloud
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+}
+
+void loop()
+{
+  Blynk.run();
+}
